@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+
+<body>
+    <canvas></canvas>
+    <div>
+        <button onclick="cancel()">取消</button>
+        <button onclick="save()">保存</button>
+    </div>
+    <script>
+        const canvas = document.querySelector("canvas");
+        canvas.getContext("2d");
+        const config = {
+            width: 500,  //宽
+            height: 300,   //高 
+            lineWidth: 5, //线宽
+            strokeStyle: 'red', // 线条颜色
+            lineCap: 'round', // 设置线条两端圆角
+            lineJoin: 'round', // 线条交汇处圆角00,
+        }
+
+        //设置宽高
+        canvas.width = config.width;
+        canvas.height = config.height;
+        //设置边框
+        canvas.style.border = "1px solid #000";
+
+        //创建上下文
+        const ctx = canvas.getContext('2d');
+        //填充背景
+        ctx.fillStyle = "transparent";
+        //绘制矩形框
+        ctx.fillRect(
+            0, //x轴绘制起始位置
+            0, //y轴绘制起始位置
+            config.width, //矩形绘制宽度
+            config.height //矩形绘制高度
+        );
+
+        //保存上次绘制的坐标和偏移量
+        const client = {
+            offsetX: 0,
+            offsetY: 0,
+            endX: 0,
+            endY: 0,
+        };
+
+        let hue = 0;
+        //绘制
+        const draw = event => {
+            ctx.strokeStyle = `hsl(${ hue }, 100%, 50%)`;    
+            if(hue >= 360){
+                hue = 0;
+            } else {
+                hue++;
+                console.log(hue);
+            }
+            console.log(hue);
+            //获取当前坐标点
+            const { pageX, pageY } = mobileStatus ? changedTouches[0] : event;
+            //修改最后一次绘制坐标点
+            client.endX = pageX;
+            client.endY = pageY;
+
+            //根据坐标点移动线条
+            ctx.lineTo(pageX, pageY)
+            //绘制线条
+            ctx.stroke()
+        }
+
+        //结束绘制
+        const closeDraw = () => {
+            //结束画笔
+            ctx.closePath();
+            //移除鼠标移动或手势移动监听
+            window.removeEventListener(mobileStatus ? 'touchmove' : 'mousemove', draw);
+        }
+
+        //判断是否是移动端
+        const mobileStatus = (/Mobile|Android|iPhone/i.test(navigator.userAgent));
+
+        //初始化事件监听器
+        const init = (event) => {
+            //获取坐标及偏移量
+            const { offsetX, offsetY, pageX, pageY } = mobileStatus ? event.changedTouches[0] : event;
+            //更新存储上次偏移量和坐标数据
+            client.offsetX = offsetX;
+            client.offsetY = offsetY;
+            client.endX = pageX;
+            client.endY = pageY;
+
+            //清除上一次beginPath
+            ctx.beginPath();
+            // 根据配置文件设置进行相应配置
+            ctx.lineWidth = config.lineWidth
+            // ctx.strokeStyle = config.strokeStyle
+            ctx.lineCap = config.lineCap
+            ctx.lineJoin = config.lineJoin
+
+            //设置画线起始点位
+            ctx.moveTo(pageX, pageY)
+            //监听鼠标移动/手势移动
+            window.addEventListener(mobileStatus ? 'touchmove' : 'mousemove', draw)
+        }
+        //创建鼠标按下/手势按下动作监听
+        window.addEventListener(mobileStatus ? 'touchstart' : 'mousedown', init);
+
+
+        // 创建鼠标/手势 弹起/离开 监听器
+        window.addEventListener(mobileStatus ? "touchend" : "mouseup", closeDraw)
+
+        //取消-清空画布
+        const cancel = () => {
+            //清空画布绘制区域
+            ctx.clearRect(0, 0, config.width, config.height);
+        }
+
+        //保存-将画布内容保存为图片
+        const save = () => {
+            //将canvas上的内容转为blob流
+            canvas.toBlob(blob => {
+                //获取时间戳，作为文件名
+                const date = Date.now().toString();
+                //创建一个a标签
+                const a = document.createElement("a");
+                //设置a标签的下载文件名
+                a.download = `${date}.png`;
+                //设置a标签的跳转路径为文件流地址
+                a.href = URL.createObjectURL(blob);
+                //手动触发a的点击事件
+                a.click();
+                //移除a标签
+                a.remove();
+            })
+        }
+    </script>
+</body>
+
+</html>
